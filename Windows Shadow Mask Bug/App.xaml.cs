@@ -23,7 +23,8 @@ namespace Windows_Shadow_Mask_Bug {
 
             Image image = new();
             abs.Add(image);
-            image.Source = ImageSource.FromUri(new Uri("https://www.readersdigest.ca/wp-content/uploads/2019/11/cat-10-e1573844975155.jpg"));
+            //image.Source = ImageSource.FromUri(new Uri("https://www.readersdigest.ca/wp-content/uploads/2019/11/cat-10-e1573844975155.jpg"));
+            image.Source = ImageSource.FromResource("Windows_Shadow_Mask_Bug.Resources.Images.cat.jpg");
             image.Aspect = Aspect.AspectFill;
 
             //resize function
