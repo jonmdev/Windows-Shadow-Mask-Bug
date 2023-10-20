@@ -6,36 +6,104 @@ namespace Windows_Shadow_Mask_Bug {
             InitializeComponent();
 
             ContentPage mainPage = new();
-            mainPage.BackgroundColor = Colors.CornflowerBlue;
+            mainPage.BackgroundColor = Colors.LightPink;
             this.MainPage = mainPage;
-
+            
+            ScreenSizeMonitor.Instance.setContentPage(mainPage);
+            
             VerticalStackLayout vert = new();
             mainPage.Content = vert;
 
-            Border border = new();
-            border.Stroke = Colors.White;
-            border.StrokeThickness = 5;
-            border.Shadow = new Shadow() { Offset = new Point(0, 6), Radius = 5 };
-            vert.Add(border);
-
             AbsoluteLayout abs = new();
-            border.Content = abs;
+            vert.Add(abs);
+            abs.Add(TopObjectWithShadow.Instance);
 
-            Image image = new();
-            abs.Add(image);
-            //image.Source = ImageSource.FromUri(new Uri("https://www.readersdigest.ca/wp-content/uploads/2019/11/cat-10-e1573844975155.jpg"));
-            image.Source = ImageSource.FromResource("Windows_Shadow_Mask_Bug.Resources.Images.cat.jpg");
-            image.Aspect = Aspect.AspectFill;
+        }
+    }
+    public class TopObjectWithShadow : AbsoluteLayout {
+        public static TopObjectWithShadow Instance { get { return lazy.Value; } }
+        private static readonly Lazy<TopObjectWithShadow> lazy = new Lazy<TopObjectWithShadow>(() => new TopObjectWithShadow());
 
-            //resize function
-            mainPage.SizeChanged += delegate {
-                if (mainPage.Width > 0) {
-                    int width = (int)mainPage.Width;
-                    border.WidthRequest = border.HeightRequest = width * 0.5;
-                    image.WidthRequest = image.HeightRequest = width * 0.5;
-                    border.StrokeShape = new RoundRectangle() { CornerRadius = width * 0.25 };
-                }
+        public TopSubComponent topMenuFrameComponent;
+
+        private TopObjectWithShadow() {
+
+            this.IgnoreSafeArea = true;
+            topMenuFrameComponent = new();
+            this.Add(topMenuFrameComponent);
+            topMenuFrameComponent.Shadow = new() { Offset = new Point(0, 5), Radius = 5 };
+            
+            ScreenSizeMonitor.Instance.ScreenSizeChanged += screenSizeChanged;
+        }
+
+        public void screenSizeChanged() {
+            if (topMenuFrameComponent != null) {
+                this.WidthRequest = ScreenSizeMonitor.Instance.screenWidth;
+                this.HeightRequest = ScreenSizeMonitor.Instance.screenHeight;
+
+                topMenuFrameComponent.resizeFunction();
+            }
+        }
+    }
+
+    public class TopSubComponent : AbsoluteLayout {
+        Border frameBorder;
+        double frameBaseHeight = 68;
+
+        public TopSubComponent() {
+            frameBorder = new();
+            this.Add(frameBorder);
+            this.IgnoreSafeArea = true;
+            frameBorder.HeightRequest = frameBaseHeight;
+            frameBorder.BackgroundColor = Colors.White;
+            frameBorder.Margin = new Thickness(0, 20, 0, 0);
+            frameBorder.StrokeShape = new RoundRectangle() { CornerRadius = new CornerRadius(30, 30, 30, 30) };
+            frameBorder.StrokeThickness = 0;
+        }
+        public void resizeFunction() {
+            this.WidthRequest = ScreenSizeMonitor.Instance.screenWidth;
+            this.HeightRequest = ScreenSizeMonitor.Instance.screenHeight;
+            frameBorder.WidthRequest = ScreenSizeMonitor.Instance.screenWidth;
+            frameBorder.HeightRequest = frameBaseHeight;
+        }
+    }
+    public class ScreenSizeMonitor {
+
+        public ContentPage pageToMonitor;
+
+        //SINGLETON LAZY PATTERN 
+        private static readonly Lazy<ScreenSizeMonitor> lazy = new Lazy<ScreenSizeMonitor>(() => new ScreenSizeMonitor());
+        public static ScreenSizeMonitor Instance { get { return lazy.Value; } }
+
+        //SCREEN CHANGE FUNCTIONS 
+        public double screenWidth = 0;
+        public double screenHeight = 0;
+        public event Action ScreenSizeChanged = null;
+
+        public void setContentPage(ContentPage contentPageToMonitor) {
+            pageToMonitor = contentPageToMonitor;
+            startScreenMonitor();
+        }
+        private void startScreenMonitor() {
+
+            updateFunction();
+            pageToMonitor.SizeChanged += delegate {
+                updateFunction();
             };
+
+        }
+        private void updateFunction() {
+            if (pageToMonitor.Width > 0 && pageToMonitor.Height > 0) {
+                screenWidth = pageToMonitor.Width;
+                screenHeight = pageToMonitor.Height;
+
+                invokeScreenSizeChanged();
+            }
+        }
+        public void invokeScreenSizeChanged() {
+            MainThread.BeginInvokeOnMainThread(() => { 
+                ScreenSizeChanged?.Invoke();
+            });
         }
     }
 }
